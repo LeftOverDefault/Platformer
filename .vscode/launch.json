@@ -8,7 +8,8 @@
             "name": "Debug Main Process",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/main.py",
+            "cwd": "${workspaceFolder}/src/",
+            "program": "main.py",
             "console": "integratedTerminal"
         }
     ]
