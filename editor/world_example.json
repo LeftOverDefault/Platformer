@@ -1,0 +1,154 @@
+{
+    "name": "World 1",
+    "chunk_size": 4,
+    "tilesets": [
+        {
+            "index": 0,
+            "tileset_name": "tilesheet_1.png",
+            "tile_width": 32,
+            "tile_height": 32,
+            "tiles_x": 10,
+            "tiles_y": 10
+        },
+        {
+            "index": 1,
+            "tileset_name": "tilesheet_2.png",
+            "tile_width": 32,
+            "tile_height": 32,
+            "tiles_x": 12,
+            "tiles_y": 12
+        }
+    ],
+    "layers": [
+        {
+            "layer_name": "background",
+            "layer_index": 0,
+            "y_sorted": false,
+            "collidable": false,
+            "chunks": {
+                "0;0": {
+                    "tiles": [
+                        [1, 1, 2, 3],
+                        [1, 2, 2, 3],
+                        [3, 3, 4, 4],
+                        [5, 5, 5, 5]
+                    ]
+                },
+                "1;0": {
+                    "tiles": [
+                        [2, 2, 3, 3],
+                        [2, 3, 4, 4],
+                        [4, 4, 5, 5],
+                        [5, 5, 6, 6]
+                    ]
+                }
+            }
+        },
+        {
+            "layer_name": "foreground",
+            "layer_index": 1,
+            "y_sorted": true,
+            "collidable": true,
+            "chunks": {
+                "0;0": {
+                    "tiles": [
+                        [0, 0, 0, 0],
+                        [0, 7, 0, 0],
+                        [0, 0, 8, 0],
+                        [0, 0, 0, 0]
+                    ]
+                }
+            }
+        }
+    ],
+    "entities": [
+        {
+            "id": "npc_1",
+            "type": "npc",
+            "position": {
+                "x": 64,
+                "y": 128
+            },
+            "properties": {}
+        },
+        {
+            "id": "chest_1",
+            "type": "chest",
+            "position": {
+                "x": 96,
+                "y": 160
+            },
+            "properties": {
+                "inventory": [
+                    "gold_coin"
+                ],
+                "locked": false
+            }
+        }
+    ],
+    "objects": [
+        {
+            "id": "rock_1",
+            "type": "rock",
+            "position": {
+                "x": 120,
+                "y": 140
+            },
+            "size": {
+                "width": 20,
+                "height": 15
+            },
+            "grid_locked": false,
+            "properties": {
+                "interactable": false,
+                "collidable": true,
+                "mass": 50,
+                "velocity": {
+                    "x": 0,
+                    "y": 0
+                },
+                "is_active": true,
+                "light_source": false,
+                "health": 100,
+                "durability": 5,
+                "sound": "rock_crash.wav"
+            }
+        },
+        {
+            "id": "lamp_post_1",
+            "type": "lamp_post",
+            "position": {
+                "x": 200,
+                "y": 180
+            },
+            "size": {
+                "width": 10,
+                "height": 40
+            },
+            "grid_locked": true,
+            "properties": {
+                "light_source": true
+            }
+        },
+        {
+            "id": "tree_1",
+            "type": "tree",
+            "position": { "x": 250, "y": 200 },
+            "size": { "width": 30, "height": 50 },
+            "grid_locked": false,
+            "properties": {
+                "collidable": true
+            }
+        },
+        {
+            "id": "sign_1",
+            "type": "sign",
+            "position": { "x": 300, "y": 220 },
+            "size": { "width": 15, "height": 25 },
+            "grid_locked": false,
+            "properties": {
+                "message": "Welcome to the forest!"
+            }
+        }
+    ]
+}
