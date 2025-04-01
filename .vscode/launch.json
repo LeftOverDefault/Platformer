@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run Editor",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/editor/",
+            "program": "main.py",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Debug Main Process",
             "type": "debugpy",
             "request": "launch",
