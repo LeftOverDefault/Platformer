@@ -18,6 +18,13 @@ def run() -> None:
     asyncio.run( game_loop( screen, setup.clock, scene_manager ) )
 
 
+def fullscreen() -> None:
+    if globals.fullscreen == True:
+        setup.window = pygame.display.set_mode( const.WINDOW_SIZE, pygame.SCALED | pygame.FULLSCREEN, const.WINDOW_SETUP[ "vsync" ] )
+    else:
+        setup.window = pygame.display.set_mode( const.WINDOW_SIZE, pygame.SCALED, const.WINDOW_SETUP[ "vsync" ] )
+
+
 async def game_loop( surface: pygame.Surface, clock: pygame.Clock, scene_manager: StateMachine ) -> None:
     mouse_buffer: input.InputBuffer = [ input.InputState.NOTHING for _ in input.MouseButton ]
 
@@ -72,6 +79,11 @@ def input_event_queue() -> bool:
         elif event.type == pygame.VIDEORESIZE:
             pass
 
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+            globals.fullscreen = not globals.fullscreen
+            fullscreen()
+
+
         # HACK: For quick development
         # NOTE: It overrides exitting fullscreen when in browser
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -80,7 +92,7 @@ def input_event_queue() -> bool:
     return True
 
 
-def update_action_buffer( action_buffer: input.InputBuffer, last_action_mapping_pressed: list[ pygame.key ] ) -> None:
+def update_action_buffer( action_buffer: input.InputBuffer, last_action_mapping_pressed: list[ pygame.key ] ) -> None: # type: ignore
     # get_just_pressed() and get_just_released() do not work with web ;(
     keys_held = pygame.key.get_pressed()
     for action in input.Action:

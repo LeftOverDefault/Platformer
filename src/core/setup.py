@@ -4,6 +4,7 @@ import pygame
 import pygame._sdl2 as sdl2
 
 import core.constants as const
+import core.globals as globals
 
 
 pygame.init()
@@ -14,9 +15,8 @@ if sys.platform == "emscripten":  # If running in browser
 else:
     window = pygame.display.set_mode( **const.WINDOW_SETUP )
 
-initial_scale_factor = 2  # <-- adjustable
 window = sdl2.Window.from_display_module()
-window.size = (const.WINDOW_WIDTH * initial_scale_factor, const.WINDOW_HEIGHT * initial_scale_factor)
+window.size = (const.WINDOW_WIDTH * globals.initial_scale_factor, const.WINDOW_HEIGHT * globals.initial_scale_factor)
 window.position = sdl2.WINDOWPOS_CENTERED
 window.show()
 
