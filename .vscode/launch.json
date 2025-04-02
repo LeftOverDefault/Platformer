@@ -19,6 +19,14 @@
             "cwd": "${workspaceFolder}/src/",
             "program": "main.py",
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "Run UI",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/ui/",
+            "program": "main.py",
+            "console": "integratedTerminal"
+        },
     ]
 }

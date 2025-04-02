@@ -1,270 +1,152 @@
 import pygame
-import csv
-import pickle
-
-pygame.init()
+import pygame._sdl2 as sdl2
 
 
-def slice_sheet( path: str, sprite_width: int, sprite_height: int ) -> list[ pygame.Surface ]:
-    sprite_sheet = pygame.image.load( path )
-    rows = int( sprite_sheet.get_height() / sprite_height )
-    columns = int( sprite_sheet.get_width() / sprite_width )
+window_width = 192 * 3
+window_height = 108 * 3
 
-    sprites = []
-    for y in range( rows ):
-        for x in range( columns ):
-            sprites.append( get_sprite_from_sheet( sprite_sheet, x * sprite_width, y * sprite_height, sprite_width, sprite_height ) )
+window_scale_factor = 2
 
-    return sprites
+window = pygame.display.set_mode((window_width, window_height), pygame.HIDDEN | pygame.SCALED, 0, 0, 0)
+window = sdl2.Window.from_display_module()
+window.size = (window_width * window_scale_factor, window_height * window_scale_factor)
+window.position = sdl2.WINDOWPOS_CENTERED
+window.show()
 
-
-def get_sprite_from_sheet( sprite_sheet: pygame.Surface, x: int, y: int, width: int, height: int ) -> pygame.Surface:
-    sprite = pygame.Surface( ( width, height ), pygame.SRCALPHA )
-    sprite.blit( sprite_sheet, ( 0, 0 ), ( x, y, width, height ) )
-    sprite = sprite.convert_alpha()
-
-    return sprite
-
+screen = pygame.display.get_surface()
+pygame.display.set_caption("Editor")
 
 clock = pygame.time.Clock()
-FPS = 60
+fps = 60
 
-#game window
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 640
-LOWER_MARGIN = 100
-SIDE_MARGIN = 300
+tileset = pygame.image.load("./assets/sunny_land.png").convert_alpha()
 
-screen = pygame.display.set_mode((SCREEN_WIDTH + SIDE_MARGIN, SCREEN_HEIGHT + LOWER_MARGIN))
-pygame.display.set_caption('Level Editor')
+def split_tileset(tileset, tile_size: tuple[int, int], tiles_x, tiles_y) -> list[pygame.Surface]:
+    tiles = []
+    for y in range(tiles_y):
+        for x in range(tiles_x):
+            tile = pygame.Surface(tile_size, flags=pygame.SRCALPHA).convert_alpha()
+            tile.blit(tileset, (-x * tile_size[0], -y * tile_size[1]))  #, (x * tile_size[0], 0))
+            tiles.append(tile)
+    return tiles
 
+tiles = split_tileset(tileset, (16, 16), 17, 8)
 
-#define game variables
-ROWS = 16
-MAX_COLS = 150
-TILE_SIZE = 16  # SCREEN_HEIGHT // ROWS
-TILE_TYPES = 21
-level = 0
-current_tile = 0
-scroll_left = False
-scroll_right = False
-scroll = 0
-scroll_speed = 1
+tiles_per_row = [1, 2, 4, 8, 17, 34, 68, 136][3]
 
+sidenav = pygame.Surface(((tiles_per_row * 16) + 18, window_height))
+sidenav.fill("#1b1e2b")
 
-#load images
-sky_img = pygame.image.load('../src/assets/textures/background/sunny_land/0.png').convert_alpha()
-#store tiles in a list
-# img_list = []
-# for x in range(TILE_TYPES):
-# 	img = pygame.image.load(f'img/tile/{x}.png').convert_alpha()
-# 	img = pygame.transform.scale(img, (TILE_SIZE, TILE_SIZE))
-# 	img_list.append(img)
+active_tile = 0
+active_indicator = pygame.Surface((18, 18))
+active_indicator.fill((255, 255, 255))
+active_indicator_inner = pygame.Surface((16, 16))
+active_indicator_inner.fill("#1b1e2b")
 
-img_list = slice_sheet("../src/assets/textures/tilesets/sunny_land.png", 16, 16)
-# save_img = pygame.image.load('img/save_btn.png').convert_alpha()
-# load_img = pygame.image.load('img/load_btn.png').convert_alpha()
+fullscreen = False
+running = True
 
+canvas = pygame.Surface((window_width - ((tiles_per_row * 16) + 18), window_height))
 
-#define colours
-GREEN = (144, 201, 120)
-WHITE = (255, 255, 255)
-RED = (200, 25, 25)
+canvas_offset: list[int, int] = [((-canvas.get_width() // 2) // 16) * 16, ((-canvas.get_height() // 2) // 16) * 16]
 
-#define font
-font = pygame.font.SysFont('Futura', 30)
+canvas_origin = pygame.Surface((2, 2))
+canvas_origin.fill((255, 255, 255))
 
-#create empty tile list
-world_data = []
-for row in range(ROWS):
-	r = [-1] * MAX_COLS
-	world_data.append(r)
+layers = []
 
-#create ground
-for tile in range(0, MAX_COLS):
-	world_data[ROWS - 1][tile] = 0
+painted_tiles = {}
 
+def render(surface: pygame.Surface):
+    canvas.fill("#292d3e")
+    sidenav.fill("#1b1e2b")
 
-#function for outputting text onto the screen
-def draw_text(text, font, text_col, x, y):
-	img = font.render(text, True, text_col)
-	screen.blit(img, (x, y))
+    surface.blit(sidenav, (0, 0))
+    for y in range(int(len(tiles) / tiles_per_row)):
+        for x in range(tiles_per_row):
+            if y * tiles_per_row + x == active_tile:
+                surface.blit(active_indicator, ((x * 16) + (x * 2) + 1, (y * 16) + (y * 2) + 1))
+                surface.blit(active_indicator_inner, ((x * 16) + (x * 2) + 2, (y * 16) + (y * 2) + 2))
+            surface.blit(tiles[y * tiles_per_row + x], ((x * 16) + (x * 2) + 2, (y * 16) + (y * 2) + 2))
+    
+    for tile_pos in painted_tiles.keys():
+        pos = tile_pos.split(";")
+        canvas.blit(painted_tiles[tile_pos], ((int(pos[0]) * 16) + canvas_offset[0], (int(pos[1]) * 16) + canvas_offset[1]))
 
+    canvas_origin.fill((255, 255, 255))
 
-#create function for drawing background
-def draw_bg():
-	screen.fill(GREEN)
-	width = sky_img.get_width()
-	for x in range(4):
-		screen.blit(sky_img, ((x * width) - scroll * 0.5, 0))
-		# screen.blit(mountain_img, ((x * width) - scroll * 0.6, SCREEN_HEIGHT - mountain_img.get_height() - 300))
-		# screen.blit(pine1_img, ((x * width) - scroll * 0.7, SCREEN_HEIGHT - pine1_img.get_height() - 150))
-		# screen.blit(pine2_img, ((x * width) - scroll * 0.8, SCREEN_HEIGHT - pine2_img.get_height()))
+    origin_position = (
+        ((((canvas.get_width() // 2) // 16) * 16) - 1) + canvas_offset[0] + (((canvas.get_width() // 2) // 16) * 16)
+        ,
+        ((((canvas.get_height() // 2) // 16) * 16) - 1) + canvas_offset[1] + (((canvas.get_height() // 2) // 16) * 16)
+    )
 
-#draw grid
-def draw_grid():
-	#vertical lines
-	for c in range(MAX_COLS + 1):
-		pygame.draw.line(screen, WHITE, (c * TILE_SIZE - scroll, 0), (c * TILE_SIZE - scroll, SCREEN_HEIGHT))
-	#horizontal lines
-	for c in range(ROWS + 1):
-		pygame.draw.line(screen, WHITE, (0, c * TILE_SIZE), (SCREEN_WIDTH, c * TILE_SIZE))
+    canvas.blit(canvas_origin, origin_position)
+
+    surface.blit(canvas, ((tiles_per_row * 16) + 18, 0))
 
 
-#function for drawing the world tiles
-def draw_world():
-	for y, row in enumerate(world_data):
-		for x, tile in enumerate(row):
-			if tile >= 0:
-				screen.blit(img_list[tile], (x * TILE_SIZE - scroll, y * TILE_SIZE))
+def update(dt: float):
+    keys = pygame.key.get_pressed()
+
+    if keys[pygame.K_w]:
+        canvas_offset[1] += 1
+    if keys[pygame.K_a]:
+        canvas_offset[0] += 1
+    if keys[pygame.K_s]:
+        canvas_offset[1] -= 1
+    if keys[pygame.K_d]:
+        canvas_offset[0] -= 1
 
 
-
-#create buttons
-# save_button = button.Button(SCREEN_WIDTH // 2, SCREEN_HEIGHT + LOWER_MARGIN - 50, save_img, 1)
-# load_button = button.Button(SCREEN_WIDTH // 2 + 200, SCREEN_HEIGHT + LOWER_MARGIN - 50, load_img, 1)
-#make a button list
-button_list = []
-button_col = 0
-button_row = 0
-# for i in range(len(img_list)):
-	# tile_button = button.Button(SCREEN_WIDTH + (75 * button_col) + 50, 75 * button_row + 50, img_list[i], 1)
-	# button_list.append(tile_button)
-	# button_col += 1
-	# if button_col == 3:
-	# 	button_row += 1
-	# 	button_col = 0
-
-
-run = True
-while run:
-
-	clock.tick(FPS)
-
-	draw_bg()
-	draw_grid()
-	draw_world()
-
-	draw_text(f'Level: {level}', font, WHITE, 10, SCREEN_HEIGHT + LOWER_MARGIN - 90)
-	draw_text('Press UP or DOWN to change level', font, WHITE, 10, SCREEN_HEIGHT + LOWER_MARGIN - 60)
-
-	#save and load data
-	# if save_button.draw(screen):
-	# 	#save level data
-	# 	with open(f'level{level}_data.csv', 'w', newline='') as csvfile:
-	# 		writer = csv.writer(csvfile, delimiter = ',')
-	# 		for row in world_data:
-	# 			writer.writerow(row)
-		#alternative pickle method
-		#pickle_out = open(f'level{level}_data', 'wb')
-		#pickle.dump(world_data, pickle_out)
-		#pickle_out.close()
-	# if load_button.draw(screen):
-	# 	#load in level data
-	# 	#reset scroll back to the start of the level
-	# 	scroll = 0
-	# 	with open(f'level{level}_data.csv', newline='') as csvfile:
-	# 		reader = csv.reader(csvfile, delimiter = ',')
-	# 		for x, row in enumerate(reader):
-	# 			for y, tile in enumerate(row):
-	# 				world_data[x][y] = int(tile)
-		#alternative pickle method
-		#world_data = []
-		#pickle_in = open(f'level{level}_data', 'rb')
-		#world_data = pickle.load(pickle_in)
-				
-
-	#draw tile panel and tiles
-	pygame.draw.rect(screen, GREEN, (SCREEN_WIDTH, 0, SIDE_MARGIN, SCREEN_HEIGHT))
-
-	#choose a tile
-	button_count = 0
-	for button_count, i in enumerate(button_list):
-		if i.draw(screen):
-			current_tile = button_count
-
-	#highlight the selected tile
-	# pygame.draw.rect(screen, RED, button_list[current_tile].rect, 3)
-
-	#scroll the map
-	if scroll_left == True and scroll > 0:
-		scroll -= 5 * scroll_speed
-	if scroll_right == True and scroll < (MAX_COLS * TILE_SIZE) - SCREEN_WIDTH:
-		scroll += 5 * scroll_speed
-
-	#add new tiles to the screen
-	#get mouse position
-	pos = pygame.mouse.get_pos()
-	x = (pos[0] + scroll) // TILE_SIZE
-	y = pos[1] // TILE_SIZE
-
-	#check that the coordinates are within the tile area
-	if pos[0] < SCREEN_WIDTH and pos[1] < SCREEN_HEIGHT:
-		#update tile value
-		if pygame.mouse.get_pressed()[0] == 1:
-			if world_data[y][x] != current_tile:
-				world_data[y][x] = current_tile
-		if pygame.mouse.get_pressed()[2] == 1:
-			world_data[y][x] = -1
+def event_handler(event: pygame.Event):
+    global active_tile
+    global fullscreen
+    global running
+    global window
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_PAGEDOWN:
+            active_tile += 1 if active_tile + 1 != len(tiles) else 0
+        if event.key == pygame.K_PAGEUP:
+            active_tile -= 1 if active_tile > 0 else 0
+        if event.key == pygame.K_F11:
+            fullscreen = not fullscreen
+            if fullscreen:
+                window = pygame.display.set_mode((window_width, window_height), pygame.SCALED | pygame.FULLSCREEN, 0, 0, 0)
+            else:
+                window = pygame.display.set_mode((window_width, window_height), pygame.SCALED, 0, 0, 0)
+        if event.key == pygame.K_ESCAPE:
+            running = False
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.button == 1:
+            relative_event_pos: tuple[int, int] = (event.pos[0] - sidenav.get_width() - canvas_offset[0], event.pos[1] - canvas_offset[1])
+            tile_pos = [relative_event_pos[0] // 16, relative_event_pos[1] // 16]
+            if f"{tile_pos[0]};{tile_pos[1]}" not in painted_tiles.keys():
+                painted_tiles[f"{tile_pos[0]};{tile_pos[1]}"] = tiles[active_tile]
+        if event.button == 3:
+            relative_event_pos: tuple[int, int] = (event.pos[0] - sidenav.get_width() - canvas_offset[0], event.pos[1] - canvas_offset[1])
+            tile_pos = [relative_event_pos[0] // 16, relative_event_pos[1] // 16]
+            if f"{tile_pos[0]};{tile_pos[1]}" in painted_tiles.keys():
+                painted_tiles.pop(f"{tile_pos[0]};{tile_pos[1]}")
 
 
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			run = False
-		#keyboard presses
-		if event.type == pygame.KEYDOWN:
-			if event.key == pygame.K_UP:
-				level += 1
-			if event.key == pygame.K_DOWN and level > 0:
-				level -= 1
-			if event.key == pygame.K_LEFT:
-				scroll_left = True
-			if event.key == pygame.K_RIGHT:
-				scroll_right = True
-			if event.key == pygame.K_RSHIFT:
-				scroll_speed = 5
+def main():
+    global running
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            event_handler(event)
+
+        dt = clock.tick(fps) / 1000
+
+        screen.fill((0, 0, 0))
+
+        render(screen)
+        update(dt)
+        
+        pygame.display.update()
 
 
-		if event.type == pygame.KEYUP:
-			if event.key == pygame.K_LEFT:
-				scroll_left = False
-			if event.key == pygame.K_RIGHT:
-				scroll_right = False
-			if event.key == pygame.K_RSHIFT:
-				scroll_speed = 1
-
-
-	pygame.display.update()
-
-pygame.quit()
-
-
-#button class
-class Button():
-	def __init__(self,x, y, image, scale):
-		width = image.get_width()
-		height = image.get_height()
-		self.image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
-		self.rect = self.image.get_rect()
-		self.rect.topleft = (x, y)
-		self.clicked = False
-
-	def draw(self, surface):
-		action = False
-
-		#get mouse position
-		pos = pygame.mouse.get_pos()
-
-		#check mouseover and clicked conditions
-		if self.rect.collidepoint(pos):
-			if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
-				action = True
-				self.clicked = True
-
-		if pygame.mouse.get_pressed()[0] == 0:
-			self.clicked = False
-
-		#draw button
-		surface.blit(self.image, (self.rect.x, self.rect.y))
-
-		return action
+if __name__ == "__main__":
+    main()
