@@ -76,9 +76,8 @@ def render(surface: pygame.Surface):
     canvas_origin.fill((255, 255, 255))
 
     origin_position = (
-        ((((canvas.get_width() // 2) // 16) * 16) - 1) + canvas_offset[0] + (((canvas.get_width() // 2) // 16) * 16)
-        ,
-        ((((canvas.get_height() // 2) // 16) * 16) - 1) + canvas_offset[1] + (((canvas.get_height() // 2) // 16) * 16)
+        ((((canvas.get_width() // 16) * 16) - 1) + canvas_offset[0]),
+        ((((canvas.get_height() // 16) * 16) - 1) + canvas_offset[1])
     )
 
     canvas.blit(canvas_origin, origin_position)
@@ -90,13 +89,13 @@ def update(dt: float):
     keys = pygame.key.get_pressed()
 
     if keys[pygame.K_w]:
-        canvas_offset[1] += 1
+        canvas_offset[1] += int(130 * dt)
     if keys[pygame.K_a]:
-        canvas_offset[0] += 1
+        canvas_offset[0] += int(130 * dt)
     if keys[pygame.K_s]:
-        canvas_offset[1] -= 1
+        canvas_offset[1] -= int(130 * dt)
     if keys[pygame.K_d]:
-        canvas_offset[0] -= 1
+        canvas_offset[0] -= int(130 * dt)
 
 
 def event_handler(event: pygame.Event):
