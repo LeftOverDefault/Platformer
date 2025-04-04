@@ -1,5 +1,6 @@
 {
     "name": "World 1",
+    "background": "#000000",
     "chunk_size": 4,
     "tilesets": [
         {
