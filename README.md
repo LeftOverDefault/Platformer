@@ -1,4 +1,4 @@
-# The Ultimate Pygame Structure  
+<!-- # The Ultimate Pygame Structure  
 ### This repository is a structure to help you organize and build your pygame projects and get them running in the browser with pygbag
 
 ## Getting Started  
@@ -59,4 +59,4 @@ Pygbag:
 https://github.com/pygame-web/pygbag  
 https://pygame-web.github.io/wiki/pygbag/  
 
-### Feel free to customize and extend this structure to suit your project's needs. Happy coding!
+### Feel free to customize and extend this structure to suit your project's needs. Happy coding! -->
