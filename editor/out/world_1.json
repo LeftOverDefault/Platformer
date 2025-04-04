@@ -1,0 +1,49 @@
+{
+    "name": "World 1",
+    "background": "#000000",
+    "tilesets": [
+        {
+            "index": 0,
+            "image_path": "./assets/sunny_land.png",
+            "tile_width": 16,
+            "tile_height": 16,
+            "tiles_x": 17,
+            "tiles_y": 8
+        }
+    ],
+    "layers": [
+        {
+            "name": "Layer_1",
+            "index": 0,
+            "y_sorted": false,
+            "collidable": false,
+            "tiles": {
+                "29;19": {
+                    "tile_index": 0,
+                    "tileset_index": 0
+                },
+                "32;19": {
+                    "tile_index": 2,
+                    "tileset_index": 0
+                },
+                "31;19": {
+                    "tile_index": 1,
+                    "tileset_index": 0
+                },
+                "30;19": {
+                    "tile_index": 1,
+                    "tileset_index": 0
+                }
+            }
+        },
+        {
+            "name": "Layer_2",
+            "index": 1,
+            "y_sorted": false,
+            "collidable": false,
+            "tiles": {}
+        }
+    ],
+    "entities": [],
+    "objects": []
+}

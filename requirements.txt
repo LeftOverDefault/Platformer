@@ -1,3 +1,6 @@
 pygame-ce
 pygbag
 auto-py-to-exe
+moderngl
+numpy
+pillow
